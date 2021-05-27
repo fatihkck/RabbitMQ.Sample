@@ -1,0 +1,2 @@
+# RabbitMQ.Sample
+Some tests
