@@ -1,7 +1,12 @@
 ﻿using RabbitMQ.Client;
 using RabbitMQ.Client.Events;
+using RabbitMQ.Sample.Database.Models;
+using RabbitMQ.Sample.Entity;
+using RabbitMQ.Sample.Library.Cache.Redis;
 using System;
+using System.Diagnostics;
 using System.Text;
+using System.Text.Json;
 using System.Threading;
 
 namespace RabbitMQ.Sample.Consumer
@@ -14,25 +19,28 @@ namespace RabbitMQ.Sample.Consumer
             Error,
         }
 
+        static Stopwatch stopwatch = null;
+        static int rowNo = 10;
+
         static void Main(string[] args)
         {
 
-            Console.WriteLine("Mesaj bekleniyor....");
+            Console.WriteLine("Queue ismi giriniz...");
+            var queName = Console.ReadLine();
 
-            //GetMessage();
+            Console.WriteLine("{0} Mesaj bekleniyor....", queName);
 
-            //FanoutExchangeGetMessage();
-
-            //DirectExchangeGetMessage();
-
-            TopicExchangeGetMessage();
+            GetMessage(queName);
 
             Console.WriteLine("....");
             Console.Read();
         }
 
-        public static void GetMessage()
+        public static void GetMessage(string queueName)
         {
+            //stopwatch = new Stopwatch();
+            //stopwatch.Start();
+
             ConnectionFactory factory = new ConnectionFactory();
             factory.HostName = "localhost";
 
@@ -46,10 +54,10 @@ namespace RabbitMQ.Sample.Consumer
                      Auto-delete (queue that has had at least one consumer is deleted when last consumer unsubscribes)
                      Arguments (optional; used by plugins and broker-specific features such as message TTL, queue length limit, etc) 
                  */
-                string queueName = "QueueSample";
+                //string queueName = "QueueSample";
                 channel.QueueDeclare(
                          queue: queueName,
-                         durable: true,
+                         durable: false,
                          exclusive: false,
                          autoDelete: false,
                          arguments: null
@@ -61,13 +69,22 @@ namespace RabbitMQ.Sample.Consumer
                     var body = eArgs.Body.ToArray();
                     var message = Encoding.UTF8.GetString(body);
 
-                    Thread.Sleep(2000);
-                    Console.WriteLine("Gelen Mesaj {0}", message);
+                    var result = GetMessageHandle(message);
+
+                    Thread.Sleep(500);
+                    //PRECONDITION-FAILED hatası için her zaman act edilmeli
+                    //https://www.grzegorowski.com/rabbitmq-406-channel-closed-precondition-failed
+                    //Already closed: The AMQP operation was interrupted: AMQP close-reason, initiated by Peer, code=406, text='PRECONDITION_FAILED - consumer ack timed out on channel 1', classId=0, methodId=0'
+                    
+                    channel.BasicAck(eArgs.DeliveryTag, false);
+
                 };
 
                 channel.BasicConsume(queue: queueName,
-                             autoAck: true,
                              consumer: consumer);
+                //channel.BasicConsume(queue: queueName,
+                //             autoAck: true,
+                //             consumer: consumer);
 
                 Console.WriteLine("Durdurmak için [enter]");
                 Console.ReadLine();
@@ -173,5 +190,107 @@ namespace RabbitMQ.Sample.Consumer
 
             }
         }
+
+
+        #region Helper
+        public static bool GetMessageHandle(string message)
+        {
+            try
+            {
+                var queueEntity = JsonSerializer.Deserialize<MessageQueueEntity>(message);
+
+                Console.WriteLine("{0} {1} {2} ", queueEntity.UniqueId, queueEntity.RowNo, queueEntity.Name);
+
+                TableSave(queueEntity.UniqueId, queueEntity.RowNo, queueEntity.Name, queueEntity.Description);
+
+                //if (queueEntity.RowNo == MessageQueueEntityLoad.RowCount)
+                //{
+                //    stopwatch.Stop();
+                //    Console.WriteLine("Time elapsed: {0:hh\\:mm\\:ss}", stopwatch.Elapsed);
+                //}
+            }
+            catch (Exception ex)
+            {
+
+                Console.WriteLine(ex.Message);
+                Debug.WriteLine(ex.Message);
+                Console.ReadLine();
+                return false;
+            }
+
+            return true;
+        }
+
+        public static bool GetMessageHandleWithRedis(string uniqueId)
+        {
+            try
+            {
+                var message = GetRedisMessage(uniqueId);
+
+                var queueEntity = JsonSerializer.Deserialize<MessageQueueEntity>(message);
+
+                Console.WriteLine("{0} {1} ", queueEntity.UniqueId, queueEntity.RowNo);
+
+                if (queueEntity.RowNo == MessageQueueEntityLoad.RowCount)
+                {
+                    stopwatch.Stop();
+                    Console.WriteLine("Time elapsed: {0:hh\\:mm\\:ss}", stopwatch.Elapsed);
+                }
+            }
+            catch (Exception ex)
+            {
+
+                Debug.WriteLine(ex.Message);
+                return false;
+            }
+
+            return true;
+        }
+
+        public static string GetRedisMessage(string key)
+        {
+
+
+            RedisCacheManager manager = new RedisCacheManager();
+            string result = manager.Get(key);
+            var removeResult = manager.Remove(key);
+
+            return result;
+
+            //using (IRedisNativeClient client = new RedisClient())
+            //{
+
+            //    //var clientQueue = client.As<MessageQueueEntity>();
+
+            //    //var savedCustomer = clientQueue.Store(queueEntity);
+
+
+            //    string result = Encoding.UTF8.GetString(client.Get(key));
+            //    client.Del(key);
+
+            //    return result;
+            //    //   client.Del("Mesaj:1");
+            //    //Console.WriteLine($"Değer : {result}");
+            //}
+
+            return string.Empty;
+        }
+
+        public static void TableSave(Guid uniqueId, int rowNo, string name, string description)
+        {
+            using (SampleContext db = new SampleContext())
+            {
+
+                Person person = new Person();
+                person.UniqueId = uniqueId;
+                person.RowNo = rowNo;
+                person.Name = name;
+                person.Description = description;
+
+                db.Add(person);
+                db.SaveChanges();
+            }
+        }
+        #endregion
     }
 }

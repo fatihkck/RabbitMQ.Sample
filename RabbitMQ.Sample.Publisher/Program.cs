@@ -1,9 +1,16 @@
 ﻿using RabbitMQ.Client;
+using RabbitMQ.Sample.Entity;
+using RabbitMQ.Sample.Library.Cache;
+using RabbitMQ.Sample.Library.Cache.Redis;
+using StackExchange.Redis;
 using System;
 using System.Text;
+using System.Text.Json;
+using System.Threading;
 
 namespace RabbitMQ.Sample.Publisher
 {
+
 
     class Program
     {
@@ -15,31 +22,48 @@ namespace RabbitMQ.Sample.Publisher
             Warning = 4
         }
 
+
         static void Main(string[] args)
         {
 
-            //for (int i = 0; i < 100; i++)
-            //{
-            //    SendQueue(i.ToString());
-            //}
+            Console.WriteLine("Queue ismi giriniz...");
+            var queName = Console.ReadLine();
+            Console.WriteLine("{0} Mesaj gönderiliyor....", queName);
+
+            //SetRedisMessage("keys_name", "message");
 
 
-            //for (int i = 0; i < 10; i++)
-            //{
-            //    FanoutExchangeSendQueue(i.ToString());
-            //}
-
-            //DirectExchangeSendQueue("1");
+            var messageDataList = new MessageQueueEntityLoad().Gets();
 
 
-            TopicExchangeSendQueue("1");
-            
+            foreach (var item in messageDataList)
+            {
+
+                var jsonMsg = JsonSerializer.Serialize(item);
+
+                try
+                {
+                    Thread.Sleep(100);
+                    SendQueue(jsonMsg, queName);
+                }
+                catch (Exception ex)
+                {
+
+                    Console.WriteLine(ex.Message);
+                    Console.Read();
+                }
+
+                //SendQueue(item.UniqueId.ToString());
+                //SetRedisMessage(item.UniqueId.ToString(), jsonMsg);
+
+                Console.WriteLine(messageDataList.IndexOf(item));
+            }
 
             Console.WriteLine("Mesaj gönderildi.");
             Console.Read();
         }
 
-        public static void SendQueue(string msg)
+        public static void SendQueue(string msg, string queueName)
         {
             ConnectionFactory factory = new ConnectionFactory();
             factory.HostName = "localhost";
@@ -55,16 +79,16 @@ namespace RabbitMQ.Sample.Publisher
                      Arguments (optional; used by plugins and broker-specific features such as message TTL, queue length limit, etc) 
                  */
 
-                string queueName = "QueueSample";
+                //string queueName = "QueueSample";
                 channel.QueueDeclare(
                          queue: queueName,
-                         durable: true,
+                         durable: false,
                          exclusive: false,
                          autoDelete: false,
                          arguments: null
                         );
 
-                string message = "Merhaba FATİH KOÇAK " + msg;
+                string message = msg;
                 var body = Encoding.UTF8.GetBytes(message);
 
                 channel.BasicPublish(
@@ -75,6 +99,11 @@ namespace RabbitMQ.Sample.Publisher
             }
         }
 
+        /// <summary>
+        /// Pub/Sub işlemleri, kuyruktaki datayı paralel olarak işletmek istediğinde kullanılabilinir.
+        /// orn: yüklenen bir video 480,720,1080 vb çözünürlüklerine göre aynı anda encode edilmeye başlatılabilinir.
+        /// </summary>
+        /// <param name="msg"></param>
         public static void FanoutExchangeSendQueue(string msg)
         {
             ConnectionFactory factory = new ConnectionFactory();
@@ -85,8 +114,8 @@ namespace RabbitMQ.Sample.Publisher
             {
 
                 channel.ExchangeDeclare(exchange: "logs", durable: true, type: ExchangeType.Fanout);
-          
-          
+
+
                 string message = "Merhaba FATİH KOÇAK " + msg;
                 var body = Encoding.UTF8.GetBytes(message);
 
@@ -149,6 +178,44 @@ namespace RabbitMQ.Sample.Publisher
             }
         }
 
+
+        #region Helper 
+
+        public static void SetRedisMessage(string key, string message)
+        {
+
+            RedisCacheManager manager = new RedisCacheManager();
+            manager.Set(key, message);
+
+
+
+
+            //using (ConnectionMultiplexer redis = ConnectionMultiplexer.Connect("localhost"))
+            //{
+            //    // ^^^ store and re-use this!!!
+
+            //    IDatabase db = redis.GetDatabase();
+            //    db.StringSet(key, Encoding.UTF8.GetBytes(message));
+            //}
+
+            //string value = db.StringGet("mykey");
+            //            Console.WriteLine(value); // writes: "abcdefg"
+
+            //using (IRedisNativeClient client = new RedisClient())
+            //{
+
+            //    //var clientQueue = client.As<MessageQueueEntity>();
+
+            //    //var savedCustomer = clientQueue.Store(queueEntity);
+            //    client.Set(key, Encoding.UTF8.GetBytes(message));
+
+            //    //string result = Encoding.UTF8.GetString(client.Get("Mesaj:1"));
+
+            //    //   client.Del("Mesaj:1");
+            //    //Console.WriteLine($"Değer : {result}");
+            //}
+        }
+        #endregion
 
     }
 }

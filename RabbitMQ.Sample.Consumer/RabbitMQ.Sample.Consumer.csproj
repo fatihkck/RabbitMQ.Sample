@@ -9,4 +9,10 @@
     <PackageReference Include="rabbitMq.Client" Version="6.2.1" />
   </ItemGroup>
 
+  <ItemGroup>
+    <ProjectReference Include="..\Core\RabbitMQ.Sample.Database\RabbitMQ.Sample.Database.csproj" />
+    <ProjectReference Include="..\Core\RabbitMQ.Sample.Entity\RabbitMQ.Sample.Entity.csproj" />
+    <ProjectReference Include="..\Core\RabbitMQ.Sample.Library\RabbitMQ.Sample.Library.csproj" />
+  </ItemGroup>
+
 </Project>
