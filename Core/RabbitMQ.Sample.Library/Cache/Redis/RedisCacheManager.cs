@@ -67,7 +67,7 @@ namespace RabbitMQ.Sample.Library.Cache.Redis
                 _db.KeyDelete(item);
         }
 
-        public void Set(string key, string data, int cacheTime=0)
+        public void Set(string key, string data, int cacheTime = 0)
         {
             if (data == null)
                 return;

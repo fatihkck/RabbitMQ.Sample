@@ -44,51 +44,87 @@ namespace RabbitMQ.Sample.Consumer
             ConnectionFactory factory = new ConnectionFactory();
             factory.HostName = "localhost";
 
-            using (var connection = factory.CreateConnection())
-            using (var channel = connection.CreateModel())
+
+            try
             {
-                /*
-                 QueueDeclare Params Description:
-                     Durable (the queue will survive a broker restart)
-                     Exclusive (used by only one connection and the queue will be deleted when that connection closes)
-                     Auto-delete (queue that has had at least one consumer is deleted when last consumer unsubscribes)
-                     Arguments (optional; used by plugins and broker-specific features such as message TTL, queue length limit, etc) 
-                 */
-                //string queueName = "QueueSample";
-                channel.QueueDeclare(
-                         queue: queueName,
-                         durable: false,
-                         exclusive: false,
-                         autoDelete: false,
-                         arguments: null
-                      );
 
-                var consumer = new EventingBasicConsumer(channel);
-                consumer.Received += (model, eArgs) =>
+
+
+                using (var connection = factory.CreateConnection())
+                using (var channel = connection.CreateModel())
                 {
-                    var body = eArgs.Body.ToArray();
-                    var message = Encoding.UTF8.GetString(body);
+                    /*
+                     QueueDeclare Params Description:
+                         Durable (the queue will survive a broker restart)
+                         Exclusive (used by only one connection and the queue will be deleted when that connection closes)
+                         Auto-delete (queue that has had at least one consumer is deleted when last consumer unsubscribes)
+                         Arguments (optional; used by plugins and broker-specific features such as message TTL, queue length limit, etc) 
+                     */
+                    //string queueName = "QueueSample";
+                    channel.QueueDeclare(
+                             queue: queueName,
+                             durable: true,
+                             exclusive: false,
+                             autoDelete: false,
+                             arguments: null
+                          );
 
-                    var result = GetMessageHandle(message);
+                    var consumer = new EventingBasicConsumer(channel);
+                    consumer.Received += (model, eArgs) =>
+                    {
 
-                    Thread.Sleep(500);
-                    //PRECONDITION-FAILED hatası için her zaman act edilmeli
-                    //https://www.grzegorowski.com/rabbitmq-406-channel-closed-precondition-failed
-                    //Already closed: The AMQP operation was interrupted: AMQP close-reason, initiated by Peer, code=406, text='PRECONDITION_FAILED - consumer ack timed out on channel 1', classId=0, methodId=0'
-                    
-                    channel.BasicAck(eArgs.DeliveryTag, false);
+                        try
+                        {
+                            //once state processing olarak update edilmeli sonra acknowledgement edilmeli                           
+                            channel.BasicAck(eArgs.DeliveryTag, false);
 
-                };
+                            //data processing işlemi buradan sonra yapılmalı
+                            var body = eArgs.Body.ToArray();
+                            var message = Encoding.UTF8.GetString(body);
 
-                channel.BasicConsume(queue: queueName,
-                             consumer: consumer);
-                //channel.BasicConsume(queue: queueName,
-                //             autoAck: true,
-                //             consumer: consumer);
+                            var result = GetMessageHandle(message);
 
-                Console.WriteLine("Durdurmak için [enter]");
+                            //Thread.Sleep(1000);
+                            //PRECONDITION-FAILED hatası için her zaman act edilmeli
+                            //https://www.grzegorowski.com/rabbitmq-406-channel-closed-precondition-failed
+                            //Already closed: The AMQP operation was interrupted: AMQP close-reason, initiated by Peer, code=406, text='PRECONDITION_FAILED - consumer ack timed out on channel 1', classId=0, methodId=0'
+                        }
+                        catch (Exception ex)
+                        {
+
+                            ///RabbitMQ.Client.Exceptions.AlreadyClosedException
+                            Console.WriteLine("Received event err {0}", ex.Message);
+                        }
+
+                    };
+
+                    channel.BasicConsume(queue: queueName,
+                                 consumer: consumer);
+                    //channel.BasicConsume(queue: queueName,
+                    //             autoAck: true,
+                    //             consumer: consumer);
+
+                    Console.WriteLine("Durdurmak için [enter]");
+                    Console.ReadLine();
+
+                }
+
+
+            }
+            catch (Client.Exceptions.BrokerUnreachableException e)
+            {
+                Console.WriteLine("Broker unreachable err {0}", e.Message);
                 Console.ReadLine();
 
+                //Thread.Sleep(5000);
+                // apply retry logic
+                //connection fail ise yeniden connect olunabilinir
+            }
+            catch (Exception ex)
+            {
+
+                Console.WriteLine("General err {0}", ex.Message);
+                Console.ReadLine();
             }
         }
 

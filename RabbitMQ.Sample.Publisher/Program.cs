@@ -43,7 +43,7 @@ namespace RabbitMQ.Sample.Publisher
 
                 try
                 {
-                    Thread.Sleep(100);
+                    ///Thread.Sleep(100);
                     SendQueue(jsonMsg, queName);
                 }
                 catch (Exception ex)
@@ -82,7 +82,7 @@ namespace RabbitMQ.Sample.Publisher
                 //string queueName = "QueueSample";
                 channel.QueueDeclare(
                          queue: queueName,
-                         durable: false,
+                         durable: true,
                          exclusive: false,
                          autoDelete: false,
                          arguments: null
@@ -91,9 +91,15 @@ namespace RabbitMQ.Sample.Publisher
                 string message = msg;
                 var body = Encoding.UTF8.GetBytes(message);
 
+
+                var props = channel.CreateBasicProperties();
+                props.DeliveryMode = 2;
+
+
                 channel.BasicPublish(
                     exchange: string.Empty,
                     routingKey: queueName,
+                    basicProperties: props,
                     body: body
                     );
             }
