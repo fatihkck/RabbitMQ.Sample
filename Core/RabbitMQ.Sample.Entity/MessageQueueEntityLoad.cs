@@ -6,7 +6,7 @@ namespace RabbitMQ.Sample.Entity
     public class MessageQueueEntityLoad
     {
 
-        public static int RowCount = 1000;
+        public static int RowCount = 100;
 
         public List<MessageQueueEntity> Gets()
         {

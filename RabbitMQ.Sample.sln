@@ -11,9 +11,11 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Core", "Core", "{C93A1B90-D
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "RabbitMQ.Sample.Entity", "Core\RabbitMQ.Sample.Entity\RabbitMQ.Sample.Entity.csproj", "{3A4EB93B-6408-4222-8D2F-08F263499BFC}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "RabbitMQ.Sample.Library", "Core\RabbitMQ.Sample.Library\RabbitMQ.Sample.Library.csproj", "{4BE3933C-4918-4F37-B772-C9A92AB175F6}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "RabbitMQ.Sample.Library", "Core\RabbitMQ.Sample.Library\RabbitMQ.Sample.Library.csproj", "{4BE3933C-4918-4F37-B772-C9A92AB175F6}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "RabbitMQ.Sample.Database", "Core\RabbitMQ.Sample.Database\RabbitMQ.Sample.Database.csproj", "{0A9582FB-D1AE-45A3-80C5-56FC0F20A00F}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "RabbitMQ.Sample.Database", "Core\RabbitMQ.Sample.Database\RabbitMQ.Sample.Database.csproj", "{0A9582FB-D1AE-45A3-80C5-56FC0F20A00F}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "RabbitMQ.WorkerService.Consumer", "RabbitMQ.WorkerService.Consumer\RabbitMQ.WorkerService.Consumer.csproj", "{5B06F624-B30F-46E3-8037-576C3BA651DE}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -41,6 +43,10 @@ Global
 		{0A9582FB-D1AE-45A3-80C5-56FC0F20A00F}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{0A9582FB-D1AE-45A3-80C5-56FC0F20A00F}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{0A9582FB-D1AE-45A3-80C5-56FC0F20A00F}.Release|Any CPU.Build.0 = Release|Any CPU
+		{5B06F624-B30F-46E3-8037-576C3BA651DE}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{5B06F624-B30F-46E3-8037-576C3BA651DE}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{5B06F624-B30F-46E3-8037-576C3BA651DE}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{5B06F624-B30F-46E3-8037-576C3BA651DE}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

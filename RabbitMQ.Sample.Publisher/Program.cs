@@ -26,8 +26,9 @@ namespace RabbitMQ.Sample.Publisher
         static void Main(string[] args)
         {
 
-            Console.WriteLine("Queue ismi giriniz...");
-            var queName = Console.ReadLine();
+            //Console.WriteLine("Queue ismi giriniz...");
+            //var queName = Console.ReadLine();
+            var queName = "Queue1";
             Console.WriteLine("{0} Mesaj gönderiliyor....", queName);
 
             //SetRedisMessage("keys_name", "message");
@@ -67,6 +68,11 @@ namespace RabbitMQ.Sample.Publisher
         {
             ConnectionFactory factory = new ConnectionFactory();
             factory.HostName = "localhost";
+            factory.UserName = "guest";
+            factory.Password = "guest";
+            factory.VirtualHost = "/";
+            factory.Port = 5672;
+
 
             using (var connection = factory.CreateConnection())
             using (var channel = connection.CreateModel())

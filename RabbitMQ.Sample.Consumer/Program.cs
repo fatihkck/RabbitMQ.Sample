@@ -43,6 +43,9 @@ namespace RabbitMQ.Sample.Consumer
 
             ConnectionFactory factory = new ConnectionFactory();
             factory.HostName = "localhost";
+            factory.UserName = "guest";
+            factory.Password = "123456";
+            factory.VirtualHost = "production";
 
 
             try
